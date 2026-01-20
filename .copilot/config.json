@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "allowlist": {
+    "languages": ["python", "sql", "bash"],
+    "frameworks": [],
+    "libraries": ["psycopg2", "requests"]
+  },
+  "blocklist": {
+    "patterns": [
+      "score",
+      "streak",
+      "achievement",
+      "badge",
+      "gamif",
+      "reward",
+      "normalize",
+      "percent",
+      "ml",
+      "ai",
+      "optimiz",
+      "recommend",
+      "sentiment",
+      "habit"
+    ]
+  },
+  "style": {
+    "preferExplicit": true,
+    "preferReadability": true,
+    "discourageAbstraction": true
+  },
+  "constraints": {
+    "noORM": true,
+    "noHiddenState": true,
+    "noAutoHealingLogic": true,
+    "noTimeDecay": true
+  }
+}

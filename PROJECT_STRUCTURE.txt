@@ -1,0 +1,296 @@
+LOGOS - PROJECT STRUCTURE
+=========================
+
+Phase 3: Read-Only Observability - COMPLETE
+Generated: January 20, 2026
+
+DIRECTORY TREE
+==============
+
+logOS/
+│
+├─ DOCUMENTATION.md               ← START HERE: Documentation index
+├─ QUICKSTART.md                  ← Getting started in 5 minutes
+├─ README.md                      ← Project overview
+├─ DEVELOPER_REFERENCE.md         ← Code patterns and templates
+├─ PHASE3_CHECKLIST.md            ← Implementation checklist
+├─ PHASE3_COMPLETE.md             ← Executive summary
+├─ PROJECT_STRUCTURE.txt          ← This file
+│
+├─ Core Application
+│  ├─ logos/
+│  │  ├─ __init__.py              ← Package definition
+│  │  ├─ __main__.py              ← Entry point (python -m logos)
+│  │  ├─ cli.py                   ← Command interface (argparse)
+│  │  ├─ db.py                    ← Database access (no ORM)
+│  │  └─ alignment.py             ← FROZEN state machine
+│  │
+│  └─ tests/
+│     ├─ __init__.py
+│     └─ test_health.py           ← Health command tests
+│
+├─ Database
+│  ├─ schema.sql                  ← Schema definition
+│  ├─ schema-init.sql             ← Initial data population
+│  └─ scripts/
+│     └─ init_db.sh               ← Database initialization script
+│
+├─ Docker Infrastructure
+│  ├─ Dockerfile                  ← LogOS container definition
+│  ├─ docker-compose.yml          ← PostgreSQL + LogOS orchestration
+│  ├─ entrypoint.sh               ← Container entry point
+│  └─ run.sh                      ← Convenience script
+│
+├─ Configuration & Dependencies
+│  ├─ requirements.txt            ← Python dependencies (psycopg2)
+│  ├─ .github/
+│  │  └─ copilot-instructions.md  ← Project principles (Copilot reads)
+│  └─ .copilot/
+│     └─ config.json              ← Copilot guardrails and blocklists
+│
+├─ Documentation
+│  ├─ docs/
+│  │  ├─ copilot_do_not_suggest.md        ← Forbidden suggestions
+│  │  └─ phase3_read_only_observability.md ← Phase 3 architecture
+│  │
+│  └─ .git/                       ← Git repository
+│     └─ (version control history)
+│
+└─ Testing
+   └─ run_tests.py               ← Test runner
+
+
+FILE INVENTORY
+==============
+
+Python Files (5 + 2 tests)
+├─ logos/__init__.py              36 bytes     Package init
+├─ logos/__main__.py              60 bytes     Module entry
+├─ logos/alignment.py             2.8 KB      Alignment logic (FROZEN)
+├─ logos/cli.py                   5.2 KB      CLI interface
+├─ logos/db.py                    3.6 KB      Database layer
+├─ tests/__init__.py              1.2 KB      Test suite
+├─ tests/test_health.py           9.5 KB      Health tests
+└─ run_tests.py                   200 bytes    Test runner
+
+SQL Files (2)
+├─ schema.sql                     1.1 KB      Database schema
+└─ schema-init.sql                400 bytes   Initial data
+
+Configuration Files (3)
+├─ requirements.txt               50 bytes    Dependencies
+├─ docker-compose.yml             600 bytes   Orchestration
+└─ .copilot/config.json           800 bytes   Guardrails
+
+Documentation (8)
+├─ DOCUMENTATION.md               3.8 KB      Index (you are here)
+├─ QUICKSTART.md                  3.7 KB      Getting started
+├─ README.md                      3.3 KB      Overview
+├─ DEVELOPER_REFERENCE.md         6.7 KB      Patterns
+├─ PHASE3_CHECKLIST.md            7.5 KB      Checklist
+├─ PHASE3_COMPLETE.md             11 KB       Executive summary
+├─ PROJECT_STRUCTURE.txt          This file   Inventory
+└─ docs/phase3_read_only_observability.md  6.2 KB  Architecture
+
+Infrastructure (3)
+├─ Dockerfile                     600 bytes   Container def
+├─ entrypoint.sh                  300 bytes   Container entry
+└─ run.sh                         1.2 KB      Convenience script
+
+Constraints (2)
+├─ .github/copilot-instructions.md  1.8 KB   Project rules
+└─ docs/copilot_do_not_suggest.md   1.3 KB   Forbidden patterns
+
+Scripts (1)
+└─ scripts/init_db.sh             600 bytes   DB init
+
+
+DATA FLOW
+=========
+
+Command Invocation:
+  $ logos health
+
+Flow:
+  1. Python entry: logos/__main__.py
+  2. CLI parsing: logos/cli.py → cmd_health()
+  3. Database read: logos/db.py → fetch_system_health_today()
+     → PostgreSQL system_health_today (read-only view)
+  4. State evaluation: logos/alignment.py → calculate_system_state()
+  5. Output formatting: logos/cli.py → format_health_output()
+  6. Result: stdout + exit code (0/1/2)
+
+Docker Flow:
+  $ docker-compose up
+  → Starts PostgreSQL with schema
+  → Initializes daily_state and calendar
+  → Builds LogOS container
+  → Runs "logos health"
+  → Outputs result
+
+
+KEY COMPONENTS
+==============
+
+FROZEN (Do not alter without explicit instruction):
+  • logos/alignment.py: calculate_system_state()
+    → State machine implementation
+    → Alignment logic
+    → Metaphysically significant order of checks
+
+READ-ONLY (Phase 3 scope):
+  • logos/cli.py: health command
+  • logos/db.py: database queries
+  • Database views and schema
+
+FUTURE (Phase 4+):
+  • Mutation commands (logos log add, logos confess)
+  • Confession state transitions
+  • Write-path ordering enforcement
+  • Temporal constraints
+
+
+DEPENDENCIES
+============
+
+External:
+  • Python 3.9+
+  • PostgreSQL 12+ (via Docker or local)
+  • psycopg2 (Python PostgreSQL driver)
+
+Standard Library Only:
+  • sys, os, argparse, datetime
+  • unittest.mock (for testing)
+
+
+RUNNING THE PROJECT
+===================
+
+Quick Start (Docker, recommended):
+  $ cd /home/evan/Code/logOS
+  $ docker-compose up
+
+Convenience Script:
+  $ ./run.sh
+
+Local Setup:
+  $ pip install -r requirements.txt
+  $ export LOGOS_DB_HOST=localhost ...
+  $ bash scripts/init_db.sh
+  $ python3 -m logos health
+
+Run Tests:
+  $ docker-compose run --rm logos python3 run_tests.py
+  or
+  $ python3 run_tests.py
+
+
+DOCUMENT PURPOSES
+=================
+
+DOCUMENTATION.md         ← You are reading the index
+QUICKSTART.md            ← New users: 5-minute guide
+README.md                ← Overview of the project
+DEVELOPER_REFERENCE.md   ← Developers: code patterns
+PHASE3_CHECKLIST.md      ← Reviewers: implementation details
+PHASE3_COMPLETE.md       ← Summary of what was built
+PROJECT_STRUCTURE.txt    ← This inventory
+phase3_read_only_observability.md ← Architects: deep dive
+
+copilot-instructions.md  ← Copilot: project rules
+config.json              ← Copilot: blocklists
+copilot_do_not_suggest.md ← Copilot: forbidden patterns
+
+
+TESTING
+=======
+
+Unit Tests:
+  • Alignment logic (stable, degraded, critical states)
+  • Output formatting
+  • Exit codes
+  • Database queries
+
+Integration Tests:
+  • End-to-end health command
+  • Mock database scenarios
+  • Invariant failure detection
+
+Run: python3 run_tests.py
+
+All tests passing: ✅
+
+
+CONSTRAINTS
+===========
+
+Copilot Constraints (Enforced):
+  ✗ No modification to calculate_system_state()
+  ✗ No gamification (scores, streaks, badges)
+  ✗ No percentages or normalized scores
+  ✗ No time decay or forgiveness
+  ✗ No ORM usage
+  ✗ No implicit state machines
+  ✗ No decorators or metaprogramming
+  ✗ No auto-healing logic
+
+Design Constraints:
+  ✓ Fail loudly on missing invariants
+  ✓ Explicit SQL only
+  ✓ Standard library first
+  ✓ Every line auditable
+  ✓ Deterministic output
+  ✓ No mutation in Phase 3
+
+
+EXIT CODES
+==========
+
+0  → STABLE          (all systems good)
+1  → DEGRADED        (warning: something off)
+2  → CRITICAL        (error: system compromised)
+
+Use in shell scripts:
+  logos health && echo "Good" || echo "Issues"
+
+
+NEXT PHASE
+==========
+
+Phase 4: Write-Path Ordering
+
+Will add:
+  • Mutation commands (logos log add, logos confess)
+  • Confession state transitions
+  • Append-only enforcement
+  • Temporal constraints
+  • Daily state management
+
+Status: Waiting for approval
+
+
+SUPPORT
+=======
+
+Getting Started?     → QUICKSTART.md
+Want to contribute?  → DEVELOPER_REFERENCE.md
+Need deep dive?      → phase3_read_only_observability.md
+Have questions?      → DOCUMENTATION.md (this index)
+Need constraints?    → .github/copilot-instructions.md
+
+
+METADATA
+========
+
+Repository:  /home/evan/Code/logOS
+Phase:       3 (Read-Only Observability)
+Status:      ✅ COMPLETE
+Date:        January 20, 2026
+Python:      3.9+
+Database:    PostgreSQL 12+
+Container:   Docker + Docker Compose
+Tests:       ✅ All passing
+Docs:        ✅ Complete
+
+
+END OF FILE

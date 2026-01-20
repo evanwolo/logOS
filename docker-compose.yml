@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: logos
+      POSTGRES_USER: logos
+      POSTGRES_PASSWORD: logos_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - logos_db:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/00-schema.sql
+      - ./schema-init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logos"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  logos:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LOGOS_DB_HOST: postgres
+      LOGOS_DB_PORT: 5432
+      LOGOS_DB_NAME: logos
+      LOGOS_DB_USER: logos
+      LOGOS_DB_PASSWORD: logos_dev
+    volumes:
+      - ./logos:/app/logos
+      - ./schema.sql:/app/schema.sql
+
+volumes:
+  logos_db:
