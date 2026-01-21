@@ -75,6 +75,7 @@ python3 run_tests.py
 logOS/
 ├── logos/                  # Main package
 │   ├── alignment.py       # FROZEN state machine logic
+│   ├── mutations.py       # Write-path operations (Phase 4)
 │   ├── cli.py             # Command-line interface
 │   ├── db.py              # Database access (no ORM)
 │   └── __main__.py        # Entry point
@@ -93,6 +94,7 @@ logOS/
 | File | Purpose |
 |------|---------|
 | `logos/alignment.py` | **FROZEN** state calculation. Do not modify. |
+| `logos/mutations.py` | Write-path operations with strict constraints (Phase 4). |
 | `logos/db.py` | Reads from PostgreSQL without ORM or implicit state. |
 | `logos/cli.py` | Command dispatcher and output formatting. |
 | `schema.sql` | Append-only tables, read-only views. |
@@ -100,10 +102,11 @@ logOS/
 
 ## What to Know
 
-1. **No mutation yet.** `logos health` only reads. Write commands are Phase 4.
-2. **Fails loudly.** Missing invariants cause hard failures, not silent defaults.
-3. **No scores.** State is STABLE/DEGRADED/CRITICAL only.
-4. **Aligned with truth.** System health is computed, never stored.
+1. **Append-only hamartia.** Once logged, sins cannot be deleted. Only `confessed` state transition.
+2. **Today-only mutations.** You cannot edit yesterday's daily_state.
+3. **Fails loudly.** Missing invariants cause hard failures, not silent defaults.
+4. **No scores.** State is STABLE/DEGRADED/CRITICAL only.
+5. **Aligned with truth.** System health is computed, never stored.
 
 ## Troubleshooting
 
@@ -122,7 +125,8 @@ logOS/
 
 ## Next Steps
 
-- Read [Phase 3 Documentation](docs/phase3_read_only_observability.md)
+- Read [PHASE4_COMPLETE.md](PHASE4_COMPLETE.md) for mutation constraints
+- Read [PHASE3_COMPLETE.md](PHASE3_COMPLETE.md) for observability system
 - Review [Copilot Constraints](.github/copilot-instructions.md)
 - Check [Forbidden Suggestions](docs/copilot_do_not_suggest.md)
 

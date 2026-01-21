@@ -2,9 +2,40 @@
 
 A CLI-first system for tracking ascetic practice and sin with fixed metaphysics.
 
-## Phase 3: Read-Only Observability
+## Current Status
 
-The `logos health` command is the minimal executable kernel. It reads system truth without mutation.
+✅ **Phase 3 Complete:** Read-only observability (`logos health`)  
+✅ **Phase 4 Complete:** Write-path mutations (`logos log add`, `logos ascetic`)
+
+See [PHASE3_COMPLETE.md](PHASE3_COMPLETE.md) and [PHASE4_COMPLETE.md](PHASE4_COMPLETE.md) for details.
+
+## Core Commands
+
+### Read System State
+
+```bash
+logos health          # Show current system state + exit code
+```
+
+### Log Hamartia (Append-Only)
+
+```bash
+logos log add                                  # Interactive
+logos log add --passion Lust --description "..." # CLI
+logos log confess                              # Mark as confessed
+```
+
+### Record Daily Practice (Today Only)
+
+```bash
+logos ascetic fast --kept         # Set fasting status
+logos ascetic pray --minutes 20   # Log prayer time
+logos ascetic read --minutes 30   # Log reading time
+logos ascetic screen --minutes 90 # Log screen time
+logos ascetic status              # Show today's state
+```
+
+---
 
 ## Setup with Docker (Recommended)
 
@@ -78,6 +109,8 @@ docker-compose up
 
 # Run with explicit command
 ./run.sh health
+./run.sh log add --passion Anger --description "Road rage"
+./run.sh ascetic fast --kept
 ```
 
 Example output:
