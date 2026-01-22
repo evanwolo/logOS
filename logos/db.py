@@ -71,7 +71,13 @@ def fetch_system_health_today():
                 fast_type,
                 feast,
                 feast_level,
-                unconfessed_count
+                unconfessed_count,
+                prayer_interruptions,
+                fast_break_reason,
+                screen_time_work,
+                screen_time_social,
+                screen_time_entertainment,
+                screen_time_edifying
             FROM system_health_today
             LIMIT 1;
         """)
@@ -92,6 +98,13 @@ def fetch_system_health_today():
             "feast": row[7],
             "feast_level": row[8],
             "unconfessed_count": row[9],
+            # Phase 4 Granular Data
+            "prayer_interruptions": row[10],
+            "fast_break_reason": row[11],
+            "screen_time_work": row[12],
+            "screen_time_social": row[13],
+            "screen_time_entertainment": row[14],
+            "screen_time_edifying": row[15],
         }
         
         # Hard-fail on missing liturgical context

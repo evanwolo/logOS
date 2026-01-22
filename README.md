@@ -113,41 +113,40 @@ docker-compose up
 ./run.sh ascetic fast --kept
 ```
 
-Example output:
+### Troubleshooting
 
-```
-● System: STABLE
+#### "database connection failed"
+- **With Docker:** Make sure postgres service started. Check `docker-compose logs postgres`.
+- **Locally:** PostgreSQL not running. Start it: `sudo systemctl start postgresql` (Linux) or via Services (Windows).
 
-     Date: 2026-01-20
-    Fasted: false
-    Prayed: true
-Fast Type: regular
-   Prayer: 120 min
-  Reading: 45 min
-   Screen: 0 min
+#### "no daily state found for today"
+- Database initialized but no row for today. This is expected on first run.
+- Docker setup handles this automatically via `schema-init.sql`.
+- Local setup: Add manually or have Phase 4 commands do it.
 
-Unconfessed: 0 sin(s)
-```
+#### "no liturgical context for today"
+- Liturgical calendar table is empty. Upstream truth missing.
+- Docker setup initializes with `fast_type='regular'` for today.
 
-Exit codes:
+## Key Components
 
-- `0` — STABLE
-- `1` — DEGRADED
-- `2` — CRITICAL
+| File | Purpose |
+|------|---------|
+| `logos/alignment.py` | **FROZEN** state calculation. Do not modify. |
+| `logos/mutations.py` | Write-path operations with strict constraints (Phase 4). |
+| `logos/db.py` | Reads from PostgreSQL without ORM or implicit state. |
+| `logos/cli.py` | Command dispatcher and output formatting. |
+| `schema.sql` | Append-only tables, read-only views. |
+| `docker-compose.yml` | PostgreSQL + LogOS orchestration. |
 
-### Running Tests
+## Architecture
 
-With Docker Compose:
+### Frozen Components
 
-```bash
-docker-compose run --rm logos python3 run_tests.py
-```
+- **`calculate_system_state()`** — Alignment logic. Fixed metaphysics. Do not alter.
+- **Schema** — Append-only hamartia_log. No deletion. No editing.
 
-Or from command line (with local Python):
-
-```bash
-python3 run_tests.py
-```
+## Usage
 
 ### Using the CLI Directly
 
@@ -162,13 +161,6 @@ Locally (after setup):
 ```bash
 python3 -m logos health
 ```
-
-## Architecture
-
-### Frozen Components
-
-- **`calculate_system_state()`** — Alignment logic. Fixed metaphysics. Do not alter.
-- **Schema** — Append-only hamartia_log. No deletion. No editing.
 
 ### Design Principles
 

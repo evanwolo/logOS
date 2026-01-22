@@ -8,11 +8,33 @@ CREATE TABLE IF NOT EXISTS liturgical_calendar (
     feast_level TEXT
 );
 
+CREATE TABLE IF NOT EXISTS passion_ontology (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    type TEXT NOT NULL CHECK (type IN ('bodily', 'spiritual', 'root')),
+    parent_passion_id INTEGER REFERENCES passion_ontology(id),
+    description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS confession_log (
+    id SERIAL PRIMARY KEY,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    spiritual_father TEXT,
+    penance_assigned TEXT,
+    penance_completed BOOLEAN DEFAULT FALSE,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS hamartia_log (
     id SERIAL PRIMARY KEY,
     date DATE NOT NULL,
     description TEXT NOT NULL,
     passions TEXT NOT NULL,
+    passion_id INTEGER REFERENCES passion_ontology(id),
+    context TEXT,
+    parent_sin_id INTEGER REFERENCES hamartia_log(id),
+    absolution_id INTEGER REFERENCES confession_log(id),
     confessed BOOLEAN NOT NULL DEFAULT FALSE,
     confessed_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -24,6 +46,16 @@ CREATE TABLE IF NOT EXISTS daily_state (
     prayer_minutes INTEGER DEFAULT 0,
     reading_minutes INTEGER DEFAULT 0,
     screen_time_minutes INTEGER DEFAULT 0,
+    
+    -- Phase 4 Granular Fields
+    prayer_quality TEXT CHECK (prayer_quality IN ('distracted', 'attentive', 'deep')),
+    prayer_interruptions INTEGER DEFAULT 0,
+    fast_break_reason TEXT CHECK (fast_break_reason IN ('temptation', 'necessity', 'charity', 'ignorance', 'none')),
+    screen_time_work INTEGER DEFAULT 0,
+    screen_time_social INTEGER DEFAULT 0,
+    screen_time_entertainment INTEGER DEFAULT 0,
+    screen_time_edifying INTEGER DEFAULT 0,
+    
     fasted BOOLEAN DEFAULT FALSE,
     prayed BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -39,6 +71,14 @@ SELECT
     ds.screen_time_minutes,
     ds.fasted,
     ds.prayed,
+    -- Granular fields for Phase 4 diagnostic
+    ds.prayer_interruptions,
+    ds.fast_break_reason,
+    ds.screen_time_work,
+    ds.screen_time_social,
+    ds.screen_time_entertainment,
+    ds.screen_time_edifying,
+    
     lc.fast_type,
     lc.feast,
     lc.feast_level,
@@ -52,6 +92,12 @@ GROUP BY
     ds.screen_time_minutes,
     ds.fasted,
     ds.prayed,
+    ds.prayer_interruptions,
+    ds.fast_break_reason,
+    ds.screen_time_work,
+    ds.screen_time_social,
+    ds.screen_time_entertainment,
+    ds.screen_time_edifying,
     lc.fast_type,
     lc.feast,
     lc.feast_level;

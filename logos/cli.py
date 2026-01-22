@@ -19,18 +19,22 @@ from logos.mutations import (
 from logos.cli_agenda import register_agenda_commands
 
 
-def format_health_output(state, health_data):
+def format_health_output(diagnostic, health_data):
     """
     Format system health output in systemctl style.
     
     Args:
-        state: str ("STABLE", "DEGRADED", or "CRITICAL")
+        diagnostic: dict with keys "state", "diagnosis", "counsel"
         health_data: dict with health information
         
     Returns:
         str: Formatted output
     """
     lines = []
+    
+    state = diagnostic["state"]
+    diagnosis = diagnostic["diagnosis"]
+    counsel = diagnostic["counsel"]
     
     # Status line
     status_symbol = {
@@ -39,7 +43,7 @@ def format_health_output(state, health_data):
         "CRITICAL": "✕",
     }.get(state, "?")
     
-    lines.append(f"{status_symbol} System: {state}")
+    lines.append(f"{status_symbol} System: {state} [{diagnosis}]")
     lines.append("")
     
     # Health details
@@ -61,6 +65,10 @@ def format_health_output(state, health_data):
     lines.append("")
     lines.append(f"Unconfessed: {health_data['unconfessed_count']} sin(s)")
     
+    # Counsel
+    lines.append("")
+    lines.append(f"Counsel: {counsel}")
+    
     # Warnings for non-stable states
     if state != "STABLE":
         lines.append("")
@@ -80,6 +88,12 @@ def format_health_output(state, health_data):
         
         noise = health_data["screen_time_minutes"]
         signal = health_data["prayer_minutes"] + health_data["reading_minutes"]
+        
+        # Recalculate robust signal/noise if granular data available
+        if health_data.get("screen_time_social") is not None:
+             noise = health_data.get("screen_time_social", 0) + health_data.get("screen_time_entertainment", 0)
+             signal = health_data.get("prayer_minutes", 0) + health_data.get("reading_minutes", 0) + health_data.get("screen_time_edifying", 0)
+
         if noise > 0 and signal / noise < 0.1:
             lines.append(f"  - Signal-to-noise ratio degraded ({signal:.0f}:{noise})")
     
@@ -102,6 +116,13 @@ def cmd_health(args):
         "screen_time_minutes": health_data["screen_time_minutes"],
         "fasted": health_data["fasted"],
         "prayed": health_data["prayed"],
+        # Phase 4 Granular Fields
+        "prayer_interruptions": health_data.get("prayer_interruptions", 0),
+        "fast_break_reason": health_data.get("fast_break_reason"),
+        "screen_time_work": health_data.get("screen_time_work", 0),
+        "screen_time_social": health_data.get("screen_time_social", 0),
+        "screen_time_entertainment": health_data.get("screen_time_entertainment", 0),
+        "screen_time_edifying": health_data.get("screen_time_edifying", 0),
     }
     
     liturgical_context = {
@@ -113,13 +134,14 @@ def cmd_health(args):
     unconfessed_count = health_data["unconfessed_count"]
     
     # Evaluate system state
-    state = calculate_system_state(daily_state, liturgical_context, unconfessed_count)
+    diagnostic = calculate_system_state(daily_state, liturgical_context, unconfessed_count)
     
     # Output result
-    output = format_health_output(state, health_data)
+    output = format_health_output(diagnostic, health_data)
     print(output)
     
     # Exit code reflects state
+    state = diagnostic["state"]
     if state == "CRITICAL":
         return 2
     elif state == "DEGRADED":
