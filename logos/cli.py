@@ -15,6 +15,7 @@ from logos.mutations import (
     PASSIONS, log_hamartia, update_daily_state,
     fetch_unconfessed_sins, mark_confessed, fetch_today_state
 )
+from logos.cli_agenda import register_agenda_commands
 
 
 def format_health_output(state, health_data):
@@ -367,6 +368,9 @@ def main():
         help="Show today's ascetic practice"
     )
     parser_status.set_defaults(func=cmd_ascetic)
+    
+    # Register Agenda Layer commands
+    register_agenda_commands(subparsers)
     
     # Parse arguments
     args = parser.parse_args()

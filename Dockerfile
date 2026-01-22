@@ -12,8 +12,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY logos/ ./logos/
 COPY schema.sql .
+COPY agenda_schema.sql .
 COPY entrypoint.sh .
-RUN chmod +x entrypoint.sh
+RUN sed -i 's/\r$//' entrypoint.sh && chmod +x entrypoint.sh
 
 # Default command
 ENTRYPOINT ["./entrypoint.sh"]
