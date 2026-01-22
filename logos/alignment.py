@@ -31,7 +31,8 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
         return {
             "state": "CRITICAL",
             "diagnosis": "Paralysis of the Will",
-            "counsel": "Go to confession immediately. Do not delay. (James 5:16)"
+            "counsel": "Go to confession immediately. Do not delay. (James 5:16)",
+            "signal_to_noise_ratio": None
         }
 
     # -------------------------------------------------------------------------
@@ -54,14 +55,16 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
             return {
                 "state": "DEGRADED",
                 "diagnosis": "Bodily Weakness",
-                "counsel": "Do not despair. Resume the struggle tomorrow."
+                "counsel": "Do not despair. Resume the struggle tomorrow.",
+                "signal_to_noise_ratio": None
             }
         else: # temptation or ignorance
             # "For Esau, who for one morsel of food sold his birthright." (Heb 12:16)
             return {
                 "state": "CRITICAL",
                 "diagnosis": "Gluttony/Rebellion",
-                "counsel": "The belly is an ungrateful master. Fast strictly tomorrow."
+                "counsel": "The belly is an ungrateful master. Fast strictly tomorrow.",
+                "signal_to_noise_ratio": None
             }
 
     # -------------------------------------------------------------------------
@@ -78,12 +81,14 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
             return {
                 "state": "CRITICAL", 
                 "diagnosis": "Spiritual Death",
-                "counsel": "You are cutting yourself off from the Source of Life."
+                "counsel": "You are cutting yourself off from the Source of Life.",
+                "signal_to_noise_ratio": None
             }
         return {
             "state": "DEGRADED",
             "diagnosis": "Negligence",
-            "counsel": "Force yourself to pray even briefly. The Kingdom is taken by force. (Matt 11:12)"
+            "counsel": "Force yourself to pray even briefly. The Kingdom is taken by force. (Matt 11:12)",
+            "signal_to_noise_ratio": None
         }
 
     # Qualitative Analysis via Interruptions
@@ -93,9 +98,14 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
         return {
             "state": "DEGRADED",
             "diagnosis": "Captivity of the Mind",
-            "counsel": "Your mind is wandering. Shorten the rule, increase the attention. (St. John Climacus)"
+            "counsel": "Your mind is wandering. Shorten the rule, increase the attention. (St. John Climacus)",
+            "signal_to_noise_ratio": None
         }
 
+    # -------------------------------------------------------------------------
+    # 4. NEPSIS: SIGNAL/NOISE (The Watchfulness)
+    # "Be sober, be vigilant; because your adversary the devil walks about..." (1 Peter 5:8)
+    # -------------------------------------------------------------------------
     # -------------------------------------------------------------------------
     # 4. NEPSIS: SIGNAL/NOISE (The Watchfulness)
     # "Be sober, be vigilant; because your adversary the devil walks about..." (1 Peter 5:8)
@@ -113,14 +123,15 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
         daily_state.get("screen_time_entertainment", 0)
     )
 
-    if noise > 0:
-        ratio = signal / noise
-        if ratio < 0.1:
-            return {
-                "state": "DEGRADED",
-                "diagnosis": "Acedia / Distraction",
-                "counsel": "You are fleeing the cell of your heart. Put down the device."
-            }
+    ratio = signal / noise if noise > 0 else float('inf')
+
+    if noise > 0 and ratio < 0.1:
+        return {
+            "state": "DEGRADED",
+            "diagnosis": "Acedia / Distraction",
+            "counsel": "You are fleeing the cell of your heart. Put down the device.",
+            "signal_to_noise_ratio": ratio
+        }
 
     # -------------------------------------------------------------------------
     # 5. THEOSIS (The Goal)
@@ -129,5 +140,6 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
     return {
         "state": "STABLE",
         "diagnosis": "Watchfulness",
-        "counsel": "Glory to God. Do not become proud of this stability."
+        "counsel": "Glory to God. Do not become proud of this stability.",
+        "signal_to_noise_ratio": ratio
     }

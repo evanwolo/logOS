@@ -296,45 +296,7 @@ def record_sacrament(spiritual_father, penance_assigned=None, notes=None, sin_id
         conn.close()
 
 
-def mark_confessed(sin_ids):
-    """
-    DEPRECATED: Use record_sacrament() instead.
-    
-    This function is retained for backward compatibility only.
-    It treats confession as a toggle, which is theologically incorrect.
-    """
-    import warnings
-    warnings.warn(
-        "mark_confessed() treats confession as a toggle. "
-        "Use record_sacrament() which properly records the sacramental event.",
-        DeprecationWarning
-    )
-    
-    if not sin_ids:
-        return 0
-    
-    conn = get_connection()
-    try:
-        cur = conn.cursor()
-        
-        # Mark as confessed with timestamp (but no sacramental link)
-        cur.execute("""
-            UPDATE hamartia_log
-            SET confessed = TRUE, confessed_at = NOW()
-            WHERE id = ANY(%s) AND confessed = FALSE
-        """, (sin_ids,))
-        
-        count = cur.rowcount
-        conn.commit()
-        return count
-        
-    except psycopg2.Error as e:
-        conn.rollback()
-        print(f"error: failed to mark sins as confessed: {e}", flush=True)
-        raise SystemExit(1)
-    finally:
-        cur.close()
-        conn.close()
+
 
 
 def fetch_today_state():

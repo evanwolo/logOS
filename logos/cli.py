@@ -11,11 +11,9 @@ import argparse
 from datetime import datetime, date
 from logos.alignment import calculate_system_state
 from logos.db import fetch_system_health_today
-from logos.mutations import (
     PASSIONS, log_hamartia, update_daily_state,
-    fetch_unconfessed_sins, mark_confessed, fetch_today_state,
+    fetch_unconfessed_sins, fetch_today_state,
     record_sacrament, FAST_BREAK_REASONS
-)
 from logos.cli_agenda import register_agenda_commands
 
 
@@ -86,16 +84,14 @@ def format_health_output(diagnostic, health_data):
             else:
                 lines.append(f"  - Prayer rule missed")
         
-        noise = health_data["screen_time_minutes"]
-        signal = health_data["prayer_minutes"] + health_data["reading_minutes"]
-        
-        # Recalculate robust signal/noise if granular data available
-        if health_data.get("screen_time_social") is not None:
+        # Signal/Noise provided by alignment engine
+        ratio = diagnostic.get("signal_to_noise_ratio")
+        if ratio is not None:
              noise = health_data.get("screen_time_social", 0) + health_data.get("screen_time_entertainment", 0)
-             signal = health_data.get("prayer_minutes", 0) + health_data.get("reading_minutes", 0) + health_data.get("screen_time_edifying", 0)
-
-        if noise > 0 and signal / noise < 0.1:
-            lines.append(f"  - Signal-to-noise ratio degraded ({signal:.0f}:{noise})")
+             if ratio < 0.1:
+                # Calculate signal just for display if needed, but rely on ratio for trigger
+                signal = health_data.get("prayer_minutes", 0) + health_data.get("reading_minutes", 0) + health_data.get("screen_time_edifying", 0)
+                lines.append(f"  - Signal-to-noise ratio degraded ({signal:.0f}:{noise})")
     
     return "\n".join(lines)
 
