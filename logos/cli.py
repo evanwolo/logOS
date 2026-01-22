@@ -13,7 +13,7 @@ from logos.alignment import calculate_system_state
 from logos.db import fetch_system_health_today
     PASSIONS, log_hamartia, update_daily_state,
     fetch_unconfessed_sins, fetch_today_state,
-    record_sacrament, FAST_BREAK_REASONS
+    record_sacrament, complete_penance, FAST_BREAK_REASONS
 from logos.cli_agenda import register_agenda_commands
 
 
@@ -85,13 +85,34 @@ def format_health_output(diagnostic, health_data):
                 lines.append(f"  - Prayer rule missed")
         
         # Signal/Noise provided by alignment engine
-        ratio = diagnostic.get("signal_to_noise_ratio")
-        if ratio is not None:
-             noise = health_data.get("screen_time_social", 0) + health_data.get("screen_time_entertainment", 0)
-             if ratio < 0.1:
-                # Calculate signal just for display if needed, but rely on ratio for trigger
-                signal = health_data.get("prayer_minutes", 0) + health_data.get("reading_minutes", 0) + health_data.get("screen_time_edifying", 0)
-                lines.append(f"  - Signal-to-noise ratio degraded ({signal:.0f}:{noise})")
+        metrics = diagnostic.get("metrics")
+        if metrics:
+             ratio = metrics.get("ratio")
+             if ratio is not None and ratio < 0.1:
+                 noise = metrics.get("noise", 0)
+                 signal = metrics.get("signal", 0)
+                 lines.append(f"  - Signal-to-noise ratio degraded ({signal:.0f}:{noise})")
+
+        # Pattern Analysis (Phase 6)
+        if health_data["unconfessed_count"] > 0:
+            try:
+                from logos.patterns import analyze_hamartia_patterns
+                conn = get_connection()
+                patterns = analyze_hamartia_patterns(conn)
+                conn.close() # optimize later
+                
+                lines.append("")
+                lines.append("Pattern Analysis:")
+                if patterns["dominant_passion"]:
+                    lines.append(f"  Dominant: {patterns['dominant_passion']} ({patterns['dominant_count']} occurrences)")
+                if patterns["peak_time"]:
+                    lines.append(f"  Peak Time: {patterns['peak_time']}")
+                if patterns["causal_chain"]:
+                    lines.append(f"  Chain: {patterns['causal_chain']}")
+                if patterns["screen_correlation"]:
+                    lines.append(f"  ! High screen entertainment correlates with sin")
+            except Exception:
+                pass # Fail silently on pattern error to preserve core health output
     
     return "\n".join(lines)
 
@@ -242,17 +263,21 @@ def cmd_log_confess(args):
         else:
             spiritual_father = input("Spiritual Father's name: ").strip()
             if not spiritual_father:
-                print("error: Spiritual Father is required for the sacrament.")
+                print("error: Confession requires priesthood. Cannot proceed without spiritual father.")
                 return 1
         
         if hasattr(args, 'penance') and args.penance:
             penance = args.penance
         else:
-            penance = input("Penance assigned (or press Enter to skip): ").strip() or None
+            penance = input("Penance assigned: ").strip()
+            if not penance:
+                print("error: Confession without epitimia is incomplete.")
+                return 1
         
         notes = input("Notes (or press Enter to skip): ").strip() or None
         
         print(f"\nRecord absolution of {len(sins)} sin(s) by Fr. {spiritual_father}?")
+        print(f"Penance: {penance}")
         confirm = input("(yes/no) ")
         if confirm.lower() != 'yes':
             print("Cancelled. No changes made.")
@@ -437,6 +462,14 @@ def main():
     parser_fast.add_argument("--kept", action="store_true", help="Fast was kept")
     parser_fast.add_argument("--reason", choices=FAST_BREAK_REASONS, help="Why fast was broken")
     parser_fast.set_defaults(func=cmd_ascetic)
+
+    # penance command
+    parser_penance = subparsers.add_parser(
+        "penance", 
+        help="Complete assigned penance"
+    )
+    parser_penance.add_argument("confession_id", type=int, help="Confession ID")
+    parser_penance.set_defaults(func=cmd_complete_penance)
     
     # ascetic pray
     parser_pray = ascetic_subparsers.add_parser(
@@ -473,6 +506,14 @@ def main():
     )
     parser_status.set_defaults(func=cmd_ascetic)
     
+    # export command (Phase 7 - Collapse Resilience)
+    parser_export = subparsers.add_parser(
+        "export",
+        help="Export spiritual log to plaintext"
+    )
+    parser_export.add_argument("--file", default="spiritual-log.txt", help="Output filename")
+    parser_export.set_defaults(func=lambda args: __import__('logos.export').export.export_to_plaintext(args.file))
+
     # Register Agenda Layer commands
     register_agenda_commands(subparsers)
     

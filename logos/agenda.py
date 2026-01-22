@@ -94,17 +94,29 @@ def log_context_switch(from_type, to_type, passion=None, lag=0):
         conn.close()
 
 
-def abandon_commitment(commitment_id, passion):
+
+def abandon_commitment(commitment_id, passion, confess_as_sin=True):
     """
     Mark a commitment as abandoned.
-    Requires diagnosing the Passion (Root Cause).
-    """
+    
+    Orthodox anthropology: Failure to work is a spiritual failure.
+    "If anyone will not work, neither shall he eat." (2 Thess 3:10)
+    from logos.mutations import log_hamartia
+    
     if passion not in PASSIONS:
         raise ValueError(f"Invalid passion. Must be one of: {', '.join(PASSIONS)}")
 
     conn = get_connection()
     try:
         cur = conn.cursor()
+        
+        # Get description for the sin log
+        cur.execute("SELECT description FROM commitment_log WHERE id = %s", (commitment_id,))
+        row = cur.fetchone()
+        if not row:
+             raise ValueError("Commitment not found.")
+        desc = row[0]
+
         cur.execute("""
             UPDATE commitment_log 
             SET status = 'abandoned', 
@@ -118,6 +130,14 @@ def abandon_commitment(commitment_id, passion):
             raise ValueError("Commitment not found or not active.")
             
         conn.commit()
+        
+        # Orthodox Theology: Work failure IS spiritual failure
+        log_hamartia(
+            passion=passion,
+            description=f"Abandoned work commitment: {desc}",
+            context="work_layer"
+        )
+        
     finally:
         cur.close()
         conn.close()

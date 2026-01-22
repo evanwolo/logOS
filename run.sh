@@ -1,29 +1,43 @@
 #!/bin/bash
 # Run LogOS with Docker Compose
 # Usage: ./run.sh [command]
-#   ./run.sh health     -- Check system health (default)
-#   ./run.sh bash       -- Open shell in container
+#   ./run.sh health          -- Check system health (default)
+#   ./run.sh log add ...     -- Run specific command
+#   ./run.sh bash            -- Open shell
 
 set -e
 
 cd "$(dirname "$0")"
 
-COMMAND="${1:-health}"
+# Default command is "health" if no args provided
+if [ $# -eq 0 ]; then
+    CMD=( "health" )
+else
+    CMD=( "$@" )
+fi
 
-echo "Building LogOS containers..."
-docker-compose build
+# Ensure Postgres is running
+echo "Checking background services..."
+docker-compose up -d postgres
 
-echo "Starting services..."
-docker-compose up -d
-
-echo "Waiting for services to be ready..."
-sleep 3
+# Wait for Postgres health (timeout 30s)
+echo -n "Waiting for database..."
+for i in {1..30}; do
+    if docker-compose ps postgres | grep -q "healthy"; then
+        echo " ready."
+        break
+    fi
+    echo -n "."
+    sleep 1
+done
 
 echo ""
-echo "Running: logos $COMMAND"
+echo "Running: logos ${CMD[*]}"
 echo "---"
 
-docker-compose exec -T logos python3 -m logos "$COMMAND"
+# Run ephemeral container
+# We use "${CMD[@]}" to preserve quoted arguments
+docker-compose run --rm logos python3 -m logos "${CMD[@]}"
 
 exit_code=$?
 

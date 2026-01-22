@@ -291,6 +291,47 @@ def record_sacrament(spiritual_father, penance_assigned=None, notes=None, sin_id
         conn.rollback()
         print(f"error: failed to record sacrament: {e}", flush=True)
         raise SystemExit(1)
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+def complete_penance(confession_id):
+    """
+    Mark penance as completed.
+    
+    "Bring forth fruits worthy of repentance." (Luke 3:8)
+    Absolution forgives. Penance heals. Both are necessary.
+    
+    Args:
+        confession_id: ID of the confession entry
+        
+    Returns:
+        str: The penance text that was completed
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        
+        cur.execute("""
+            UPDATE confession_log
+            SET penance_completed = TRUE
+            WHERE id = %s AND penance_completed = FALSE
+            RETURNING penance_assigned
+        """, (confession_id,))
+        
+        row = cur.fetchone()
+        if not row:
+            raise ValueError(f"Confession {confession_id} not found or penance already complete")
+        
+        conn.commit()
+        return row[0]
+        
+    except psycopg2.Error as e:
+        conn.rollback()
+        print(f"error: failed to complete penance: {e}", flush=True)
+        raise SystemExit(1)
     finally:
         cur.close()
         conn.close()

@@ -47,8 +47,9 @@ CREATE TABLE IF NOT EXISTS daily_state (
     reading_minutes INTEGER DEFAULT 0,
     screen_time_minutes INTEGER DEFAULT 0,
     
+    
     -- Phase 4 Granular Fields
-    prayer_quality TEXT CHECK (prayer_quality IN ('distracted', 'attentive', 'deep')),
+    -- prayer_quality REMOVED to avoid prelest (subjective depth vs objective interruptions)
     prayer_interruptions INTEGER DEFAULT 0,
     fast_break_reason TEXT CHECK (fast_break_reason IN ('temptation', 'necessity', 'charity', 'ignorance', 'none')),
     screen_time_work INTEGER DEFAULT 0,

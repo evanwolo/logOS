@@ -27,12 +27,10 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
     # 1. THE FOUNDATION: HAMARTIA (The Burden)
     # "My iniquities have gone over my head; like a heavy burden they are too heavy for me." (Psalm 38:4)
     # -------------------------------------------------------------------------
-    if unconfessed_count >= 5:
-        return {
             "state": "CRITICAL",
             "diagnosis": "Paralysis of the Will",
             "counsel": "Go to confession immediately. Do not delay. (James 5:16)",
-            "signal_to_noise_ratio": None
+            "metrics": None
         }
 
     # -------------------------------------------------------------------------
@@ -56,7 +54,7 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
                 "state": "DEGRADED",
                 "diagnosis": "Bodily Weakness",
                 "counsel": "Do not despair. Resume the struggle tomorrow.",
-                "signal_to_noise_ratio": None
+                "metrics": None
             }
         else: # temptation or ignorance
             # "For Esau, who for one morsel of food sold his birthright." (Heb 12:16)
@@ -64,7 +62,7 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
                 "state": "CRITICAL",
                 "diagnosis": "Gluttony/Rebellion",
                 "counsel": "The belly is an ungrateful master. Fast strictly tomorrow.",
-                "signal_to_noise_ratio": None
+                "metrics": None
             }
 
     # -------------------------------------------------------------------------
@@ -82,13 +80,13 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
                 "state": "CRITICAL", 
                 "diagnosis": "Spiritual Death",
                 "counsel": "You are cutting yourself off from the Source of Life.",
-                "signal_to_noise_ratio": None
+                "metrics": None
             }
         return {
             "state": "DEGRADED",
             "diagnosis": "Negligence",
             "counsel": "Force yourself to pray even briefly. The Kingdom is taken by force. (Matt 11:12)",
-            "signal_to_noise_ratio": None
+            "metrics": None
         }
 
     # Qualitative Analysis via Interruptions
@@ -99,13 +97,9 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
             "state": "DEGRADED",
             "diagnosis": "Captivity of the Mind",
             "counsel": "Your mind is wandering. Shorten the rule, increase the attention. (St. John Climacus)",
-            "signal_to_noise_ratio": None
+            "metrics": None
         }
 
-    # -------------------------------------------------------------------------
-    # 4. NEPSIS: SIGNAL/NOISE (The Watchfulness)
-    # "Be sober, be vigilant; because your adversary the devil walks about..." (1 Peter 5:8)
-    # -------------------------------------------------------------------------
     # -------------------------------------------------------------------------
     # 4. NEPSIS: SIGNAL/NOISE (The Watchfulness)
     # "Be sober, be vigilant; because your adversary the devil walks about..." (1 Peter 5:8)
@@ -125,12 +119,21 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
 
     ratio = signal / noise if noise > 0 else float('inf')
 
+    # Metrics bundle for CLI
+    metrics = {
+        "signal": signal,
+        "noise": noise,
+        "ratio": ratio,
+        "unconfessed": unconfessed_count,
+        "interruptions": interruptions
+    }
+
     if noise > 0 and ratio < 0.1:
         return {
             "state": "DEGRADED",
             "diagnosis": "Acedia / Distraction",
             "counsel": "You are fleeing the cell of your heart. Put down the device.",
-            "signal_to_noise_ratio": ratio
+            "metrics": metrics
         }
 
     # -------------------------------------------------------------------------
@@ -141,5 +144,5 @@ def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
         "state": "STABLE",
         "diagnosis": "Watchfulness",
         "counsel": "Glory to God. Do not become proud of this stability.",
-        "signal_to_noise_ratio": ratio
+        "metrics": metrics
     }

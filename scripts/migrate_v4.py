@@ -50,15 +50,25 @@ def migrate():
     print("Seeding the 8 Logismoi...")
     cur.execute("""
         INSERT INTO passion_ontology (name, type, parent_passion_id) VALUES
-        ('Pride', 'root', NULL),       -- The head of the dragon (Sirach 10:13)
-        ('Vainglory', 'spiritual', NULL), -- Prepares the way for Pride (St. John Cassian)
-        ('Acedia', 'spiritual', NULL),    -- The noonday demon (Psalm 90:6)
-        ('Anger', 'spiritual', NULL),     -- Cuts off prayer (1 Timothy 2:8)
-        ('Sadness', 'spiritual', NULL),   -- Worldly sorrow brings death (2 Cor 7:10)
-        ('Avarice', 'spiritual', NULL),   -- Root of all evils (1 Tim 6:10)
-        ('Lust', 'bodily', NULL),         -- Wars against the soul (1 Peter 2:11)
-        ('Gluttony', 'bodily', NULL)      -- The stomach's demands (Phil 3:19)
+        ('Gluttony', 'bodily', NULL),
+        ('Lust', 'bodily', NULL),
+        ('Avarice', 'root', NULL),
+        ('Sadness', 'spiritual', NULL),
+        ('Anger', 'spiritual', NULL),
+        ('Acedia', 'spiritual', NULL),
+        ('Pride', 'root', NULL),
+        ('Vainglory', 'spiritual', NULL)
         ON CONFLICT (name) DO NOTHING;
+    """)
+
+    # Fix hierarchies (Orthodox Correction)
+    print("Establishing passion hierarchies...")
+    cur.execute("""
+        UPDATE passion_ontology SET parent_passion_id = (SELECT id FROM passion_ontology WHERE name = 'Pride')
+        WHERE name = 'Vainglory';
+
+        UPDATE passion_ontology SET parent_passion_id = (SELECT id FROM passion_ontology WHERE name = 'Gluttony')
+        WHERE name = 'Lust';
     """)
 
     # ---------------------------------------------------------

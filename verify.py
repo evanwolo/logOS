@@ -10,12 +10,28 @@ import sys
 from logos.alignment import calculate_system_state
 
 
+
 def test_case(name, daily_state, liturgical, unconfessed_count, expected_state):
     """Test a single scenario."""
-    state = calculate_system_state(daily_state, liturgical, unconfessed_count)
-    status = "✅" if state == expected_state else "❌"
-    print(f"{status} {name}: {state} (expected {expected_state})")
-    return state == expected_state
+    # Ensure Phase 4 fields exist with defaults
+    defaults = {
+        "prayer_interruptions": 0,
+        "fast_break_reason": "none",
+        "screen_time_work": 0,
+        "screen_time_social": 0,
+        "screen_time_entertainment": 0,
+        "screen_time_edifying": 0
+    }
+    full_state = {**defaults, **daily_state}
+
+    result = calculate_system_state(full_state, liturgical, unconfessed_count)
+    actual_state = result["state"]
+    
+    status = "✅" if actual_state == expected_state else "❌"
+    print(f"{status} {name}: {actual_state} (expected {expected_state})")
+    if actual_state != expected_state:
+        print(f"   Diagnostic: {result['diagnosis']}")
+    return actual_state == expected_state
 
 
 def main():
