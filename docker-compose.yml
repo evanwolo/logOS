@@ -32,6 +32,7 @@ services:
       LOGOS_DB_PASSWORD: logos_dev
     volumes:
       - ./logos:/app/logos
+      - ./scripts:/app/scripts
       - ./schema.sql:/app/schema.sql
 
 volumes:

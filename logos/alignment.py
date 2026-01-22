@@ -1,95 +1,133 @@
 """
-LogOS Alignment Module
+LogOS Alignment Module (Phase 4: Diagnostic)
 
-This module contains the authoritative system state calculation logic.
-The function and evaluation order are frozen by design.
+"Examine yourselves as to whether you are in the faith. Test yourselves." (2 Cor 13:5)
+
+This logic moves beyond legal standing (STABLE/CRITICAL) to spiritual diagnosis.
+It identifies the passions at work and evaluates the quality of the struggle.
 """
-
 
 def calculate_system_state(daily_state, liturgical_context, unconfessed_count):
     """
-    LogOS Alignment Function — AUTHORITATIVE SPEC
+    LogOS Alignment Function — ORTHODOX DIAGNOSTIC SPEC
 
-    This function evaluates system health using a STATE MACHINE, not a score.
-
-    DO NOT:
-    - Convert this logic into percentages, points, or normalized values
-    - Introduce decay, time-weighting, or forgiveness over time
-    - Allow positive behavior to offset unresolved errors
-    - Reorder checks for aesthetic or performance reasons
-
-    The evaluation order is THEOLOGICALLY AND ARCHITECTURALLY SIGNIFICANT.
-
-    1. HAMARTIA BUFFER CHECK (Memory Leak)
-       - unconfessed_count is a raw COUNT(*)
-       - If >= 5 → system is CRITICAL regardless of all other inputs
-       - Time does NOT reduce load
-
-    2. ASCETIC INTEGRITY CHECK (Kernel Integrity)
-       - Strict fast violations immediately escalate to CRITICAL
-       - Missed prayer rule degrades the system
-       - Missed prayer + existing hamartia escalates to CRITICAL
-
-    3. SIGNAL / NOISE CHECK (Latency)
-       - signal = prayer_minutes + reading_minutes
-       - noise = screen_time_minutes
-       - ratio < 0.1 indicates DEGRADED state
-       - Perfect silence (noise == 0) is STABLE
-
-    4. DEFAULT
-       - If none of the above conditions are met, the system is STABLE
-
-    This function RETURNS A STATE STRING.
-    It does not mutate data.
-    It does not store health.
-    It does not recommend behavior.
-
-    If you think this logic should be "improved," stop.
-    Improvements here are philosophical changes, not refactors.
+    This function evaluates the soul's condition based on the Fathers' understanding
+    of virtue (arete) and vice (kakia).
 
     Args:
-        daily_state: Dict containing prayer_minutes, reading_minutes,
-                     screen_time_minutes, fasted, prayed flags
-        liturgical_context: Dict containing fast_type (strict/regular/none),
-                           feast information
-        unconfessed_count: Integer count of unconfessed hamartia entries
+        daily_state: Dict containing prayer quality, fasting intent, screen breakdown.
+        liturgical_context: Fasting rules and Feasts.
+        unconfessed_count: Number of unhealed wounds.
 
     Returns:
-        str: One of "CRITICAL", "DEGRADED", or "STABLE"
+        dict: A diagnostic report containing 'state', 'primary_passion', and 'counsel'.
     """
-
-    # 1. HAMARTIA BUFFER CHECK
+    
+    # -------------------------------------------------------------------------
+    # 1. THE FOUNDATION: HAMARTIA (The Burden)
+    # "My iniquities have gone over my head; like a heavy burden they are too heavy for me." (Psalm 38:4)
+    # -------------------------------------------------------------------------
     if unconfessed_count >= 5:
-        return "CRITICAL"
+        return {
+            "state": "CRITICAL",
+            "diagnosis": "Paralysis of the Will",
+            "counsel": "Go to confession immediately. Do not delay. (James 5:16)"
+        }
 
-    # 2. ASCETIC INTEGRITY CHECK
+    # -------------------------------------------------------------------------
+    # 2. ASCETIC INTEGRITY: FASTING (The Will)
+    # "But I discipline my body and bring it into subjection." (1 Cor 9:27)
+    # -------------------------------------------------------------------------
     fast_type = liturgical_context.get("fast_type")
     fasted = daily_state.get("fasted", False)
-    prayed = daily_state.get("prayed", False)
+    break_reason = daily_state.get("fast_break_reason", "none")
 
     if fast_type == "strict" and not fasted:
-        return "CRITICAL"
+        # We judge the intent, not just the act.
+        if break_reason == "charity":
+            # "I desire mercy and not sacrifice." (Hosea 6:6)
+            # Breaking fast for hospitality is not a sin (St. John Cassian).
+            pass 
+        elif break_reason == "necessity":
+            # "The spirit is willing, but the flesh is weak." (Matt 26:41)
+            # Illness or inability is not rebellion.
+            return {
+                "state": "DEGRADED",
+                "diagnosis": "Bodily Weakness",
+                "counsel": "Do not despair. Resume the struggle tomorrow."
+            }
+        else: # temptation or ignorance
+            # "For Esau, who for one morsel of food sold his birthright." (Heb 12:16)
+            return {
+                "state": "CRITICAL",
+                "diagnosis": "Gluttony/Rebellion",
+                "counsel": "The belly is an ungrateful master. Fast strictly tomorrow."
+            }
 
+    # -------------------------------------------------------------------------
+    # 3. THE NOUS: PRAYER (The Connection)
+    # "Pray without ceasing." (1 Thess 5:17)
+    # -------------------------------------------------------------------------
+    prayed = daily_state.get("prayed", False)
+    # Use objective interruptions rather than subjective quality to avoid prelest
+    interruptions = daily_state.get("prayer_interruptions", 0)
+    
     if not prayed:
+        # "Apart from Me you can do nothing." (John 15:5)
         if unconfessed_count > 0:
-            return "CRITICAL"
-        return "DEGRADED"
+            return {
+                "state": "CRITICAL", 
+                "diagnosis": "Spiritual Death",
+                "counsel": "You are cutting yourself off from the Source of Life."
+            }
+        return {
+            "state": "DEGRADED",
+            "diagnosis": "Negligence",
+            "counsel": "Force yourself to pray even briefly. The Kingdom is taken by force. (Matt 11:12)"
+        }
 
-    # 3. SIGNAL / NOISE CHECK
-    prayer_minutes = daily_state.get("prayer_minutes", 0)
-    reading_minutes = daily_state.get("reading_minutes", 0)
-    screen_time_minutes = daily_state.get("screen_time_minutes", 0)
+    # Qualitative Analysis via Interruptions
+    if interruptions > 2:
+        # "This people honors me with their lips..." (Matt 15:8)
+        # We do not fail the user, but we warn them.
+        return {
+            "state": "DEGRADED",
+            "diagnosis": "Captivity of the Mind",
+            "counsel": "Your mind is wandering. Shorten the rule, increase the attention. (St. John Climacus)"
+        }
 
-    signal = prayer_minutes + reading_minutes
-    noise = screen_time_minutes
-
-    if noise == 0:
-        return "STABLE"
+    # -------------------------------------------------------------------------
+    # 4. NEPSIS: SIGNAL/NOISE (The Watchfulness)
+    # "Be sober, be vigilant; because your adversary the devil walks about..." (1 Peter 5:8)
+    # -------------------------------------------------------------------------
+    # Signal: Prayer + Reading + Edifying Content
+    signal = (
+        daily_state.get("prayer_minutes", 0) + 
+        daily_state.get("reading_minutes", 0) + 
+        daily_state.get("screen_time_edifying", 0)
+    )
+    
+    # Noise: Social + Entertainment (Work is neutral/necessary)
+    noise = (
+        daily_state.get("screen_time_social", 0) + 
+        daily_state.get("screen_time_entertainment", 0)
+    )
 
     if noise > 0:
         ratio = signal / noise
         if ratio < 0.1:
-            return "DEGRADED"
+            return {
+                "state": "DEGRADED",
+                "diagnosis": "Acedia / Distraction",
+                "counsel": "You are fleeing the cell of your heart. Put down the device."
+            }
 
-    # 4. DEFAULT
-    return "STABLE"
+    # -------------------------------------------------------------------------
+    # 5. THEOSIS (The Goal)
+    # "I have fought the good fight, I have finished the race, I have kept the faith." (2 Tim 4:7)
+    # -------------------------------------------------------------------------
+    return {
+        "state": "STABLE",
+        "diagnosis": "Watchfulness",
+        "counsel": "Glory to God. Do not become proud of this stability."
+    }
