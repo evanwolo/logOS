@@ -13,7 +13,8 @@ from logos.alignment import calculate_system_state
 from logos.db import fetch_system_health_today
 from logos.mutations import (
     PASSIONS, log_hamartia, update_daily_state,
-    fetch_unconfessed_sins, mark_confessed, fetch_today_state
+    fetch_unconfessed_sins, mark_confessed, fetch_today_state,
+    record_sacrament, FAST_BREAK_REASONS
 )
 from logos.cli_agenda import register_agenda_commands
 
@@ -191,15 +192,17 @@ def cmd_log_add(args):
 
 def cmd_log_confess(args):
     """
-    log confess — Mark sins as confessed (only state transition).
+    log confess — Record the Sacrament of Confession.
     
-    This is the ONLY allowed state transition for hamartia_log.
-    Requires explicit confirmation. Assumes sacramental confession.
+    ORTHODOX CORRECTION (Heresy II): Confession is not a toggle.
+    This records the sacramental EVENT, then links absolution to it.
+    
+    "Whose sins you forgive are forgiven them." (John 20:23)
     """
     sins = fetch_unconfessed_sins()
     
     if not sins:
-        print("No unconfessed sins.")
+        print("No unconfessed sins. Glory to God.")
         return 0
     
     print(f"\nUnconfessed Sins ({len(sins)}):")
@@ -210,23 +213,46 @@ def cmd_log_confess(args):
         print()
     
     print("=" * 70)
-    print(f"\nMark {len(sins)} sin(s) as absolved?")
-    print("This assumes sacramental confession has occurred.")
+    print("\n── THE SACRAMENT ──")
+    print("Confession is not a database toggle. It is an encounter with Grace.")
+    print()
     
     try:
-        confirm = input("\n(yes/no) ")
+        # Collect sacramental context
+        if hasattr(args, 'father') and args.father:
+            spiritual_father = args.father
+        else:
+            spiritual_father = input("Spiritual Father's name: ").strip()
+            if not spiritual_father:
+                print("error: Spiritual Father is required for the sacrament.")
+                return 1
+        
+        if hasattr(args, 'penance') and args.penance:
+            penance = args.penance
+        else:
+            penance = input("Penance assigned (or press Enter to skip): ").strip() or None
+        
+        notes = input("Notes (or press Enter to skip): ").strip() or None
+        
+        print(f"\nRecord absolution of {len(sins)} sin(s) by Fr. {spiritual_father}?")
+        confirm = input("(yes/no) ")
         if confirm.lower() != 'yes':
             print("Cancelled. No changes made.")
             return 0
+            
     except KeyboardInterrupt:
         print("\nerror: cancelled", flush=True)
         return 1
     
-    # Mark as confessed
+    # Record the Sacrament
     sin_ids = [sin['id'] for sin in sins]
-    count = mark_confessed(sin_ids)
+    result = record_sacrament(spiritual_father, penance, notes, sin_ids)
     
-    print(f"\n✓ Marked {count} sin(s) as confessed.")
+    print(f"\n✓ Sacrament recorded (ID: {result['confession_id']})")
+    print(f"✓ {result['count_absolved']} sin(s) absolved.")
+    if penance:
+        print(f"  Penance: {penance}")
+    print("\nGo in peace. Sin no more. (John 8:11)")
     print()
     
     return 0
@@ -236,46 +262,100 @@ def cmd_ascetic(args):
     """
     ascetic — Update daily_state (today only).
     
+    ORTHODOX CORRECTION (Heresy I): Now accepts Phase 4 granular fields
+    that alignment.py expects for proper diagnosis.
+    
     Temporal constraint: Can only update TODAY.
-    No retroactive changes allowed.
+    No retroactive changes allowed. No negative values (Heresy IV).
     """
-    if args.subcommand == 'fast':
-        update_daily_state(fasted=args.kept)
-        status = "kept" if args.kept else "not kept"
-        print(f"Fast: {status}")
-    
-    elif args.subcommand == 'pray':
-        if args.done:
-            update_daily_state(prayed=True)
-            print("Prayer rule: completed")
-        elif args.minutes:
-            update_daily_state(prayer_minutes=args.minutes, prayed=True)
-            print(f"Prayer: +{args.minutes} minutes")
-    
-    elif args.subcommand == 'read':
-        update_daily_state(reading_minutes=args.minutes)
-        print(f"Reading: +{args.minutes} minutes")
-    
-    elif args.subcommand == 'screen':
-        update_daily_state(screen_time_minutes=args.minutes)
-        print(f"Screen time: +{args.minutes} minutes")
-    
-    elif args.subcommand == 'status':
-        state = fetch_today_state()
-        if not state:
-            print(f"No state recorded for {date.today()}")
-            return 1
+    try:
+        if args.subcommand == 'fast':
+            reason = getattr(args, 'reason', None)
+            if args.kept:
+                update_daily_state(fasted=True)
+                print("Fast: kept")
+            else:
+                if not reason:
+                    print("Why was the fast broken? (temptation/necessity/charity/ignorance)")
+                    reason = input("> ").strip()
+                if reason not in FAST_BREAK_REASONS:
+                    print(f"error: reason must be one of: {', '.join(FAST_BREAK_REASONS)}")
+                    return 1
+                update_daily_state(fasted=False, fast_break_reason=reason)
+                print(f"Fast: broken ({reason})")
         
-        print(f"\nDaily State ({date.today()}):")
-        print("=" * 40)
-        print(f"  Prayer: {state['prayer_minutes']} min")
-        print(f" Reading: {state['reading_minutes']} min")
-        print(f"  Screen: {state['screen_time_minutes']} min")
-        print(f"  Fasted: {state['fasted']}")
-        print(f"  Prayed: {state['prayed']}")
-        print()
-    
-    return 0
+        elif args.subcommand == 'pray':
+            interruptions = getattr(args, 'interruptions', None)
+            if args.done:
+                update_daily_state(prayed=True, prayer_interruptions=interruptions)
+                msg = "Prayer rule: completed"
+                if interruptions:
+                    msg += f" ({interruptions} interruptions)"
+                print(msg)
+            elif args.minutes:
+                update_daily_state(prayer_minutes=args.minutes, prayed=True, prayer_interruptions=interruptions)
+                msg = f"Prayer: +{args.minutes} minutes"
+                if interruptions:
+                    msg += f" ({interruptions} interruptions)"
+                print(msg)
+        
+        elif args.subcommand == 'read':
+            update_daily_state(reading_minutes=args.minutes)
+            print(f"Reading: +{args.minutes} minutes")
+        
+        elif args.subcommand == 'screen':
+            # Phase 4: Granular screen time categories
+            category = getattr(args, 'category', None)
+            minutes = args.minutes
+            
+            if category == 'work':
+                update_daily_state(screen_time_work=minutes)
+                print(f"Screen (work): +{minutes} minutes")
+            elif category == 'social':
+                update_daily_state(screen_time_social=minutes)
+                print(f"Screen (social - noise): +{minutes} minutes")
+            elif category == 'entertainment':
+                update_daily_state(screen_time_entertainment=minutes)
+                print(f"Screen (entertainment - noise): +{minutes} minutes")
+            elif category == 'edifying':
+                update_daily_state(screen_time_edifying=minutes)
+                print(f"Screen (edifying - signal): +{minutes} minutes")
+            else:
+                # Legacy: total screen time
+                update_daily_state(screen_time_minutes=minutes)
+                print(f"Screen time: +{minutes} minutes (use --category for Signal/Noise tracking)")
+        
+        elif args.subcommand == 'status':
+            state = fetch_today_state()
+            if not state:
+                print(f"No state recorded for {date.today()}")
+                return 1
+            
+            print(f"\nDaily State ({date.today()}):")
+            print("=" * 50)
+            print(f"       Prayer: {state['prayer_minutes']} min")
+            if state.get('prayer_interruptions'):
+                print(f" Interruptions: {state['prayer_interruptions']}")
+            print(f"      Reading: {state['reading_minutes']} min")
+            print(f"       Fasted: {state['fasted']}")
+            if state.get('fast_break_reason'):
+                print(f"  Break Reason: {state['fast_break_reason']}")
+            print(f"       Prayed: {state['prayed']}")
+            print()
+            print("Screen Time (Signal/Noise):")
+            print(f"         Work: {state.get('screen_time_work', 0)} min (neutral)")
+            print(f"     Edifying: {state.get('screen_time_edifying', 0)} min (signal)")
+            print(f"       Social: {state.get('screen_time_social', 0)} min (noise)")
+            print(f"Entertainment: {state.get('screen_time_entertainment', 0)} min (noise)")
+            if state.get('screen_time_minutes'):
+                print(f"  Legacy Total: {state['screen_time_minutes']} min")
+            print()
+        
+        return 0
+        
+    except ValueError as e:
+        print(f"error: {e}", flush=True)
+        return 1
 
 
 def main():
@@ -318,8 +398,10 @@ def main():
     # log confess
     parser_log_confess = log_subparsers.add_parser(
         "confess",
-        help="Mark all sins as confessed (only state transition)"
+        help="Record the Sacrament of Confession"
     )
+    parser_log_confess.add_argument("--father", help="Name of Spiritual Father")
+    parser_log_confess.add_argument("--penance", help="Penance assigned")
     parser_log_confess.set_defaults(func=cmd_log_confess)
     
     # ascetic command group (Phase 4 - Daily state mutations)
@@ -335,6 +417,7 @@ def main():
         help="Set fasting status for today"
     )
     parser_fast.add_argument("--kept", action="store_true", help="Fast was kept")
+    parser_fast.add_argument("--reason", choices=FAST_BREAK_REASONS, help="Why fast was broken")
     parser_fast.set_defaults(func=cmd_ascetic)
     
     # ascetic pray
@@ -344,6 +427,7 @@ def main():
     )
     parser_pray.add_argument("--minutes", type=int, help="Minutes of prayer")
     parser_pray.add_argument("--done", action="store_true", help="Mark prayer rule complete")
+    parser_pray.add_argument("--interruptions", type=int, help="Number of times attention wandered")
     parser_pray.set_defaults(func=cmd_ascetic)
     
     # ascetic read
@@ -357,9 +441,11 @@ def main():
     # ascetic screen
     parser_screen = ascetic_subparsers.add_parser(
         "screen",
-        help="Log screen time for today"
+        help="Log screen time for today (use --category for Signal/Noise tracking)"
     )
     parser_screen.add_argument("--minutes", type=int, required=True, help="Minutes of screen time")
+    parser_screen.add_argument("--category", choices=['work', 'social', 'entertainment', 'edifying'],
+        help="Screen time category: work (neutral), social/entertainment (noise), edifying (signal)")
     parser_screen.set_defaults(func=cmd_ascetic)
     
     # ascetic status
